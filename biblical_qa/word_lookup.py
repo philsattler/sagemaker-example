@@ -15,13 +15,16 @@ class BiblicalWordLookup:
     CJSB is stored locally (not available via free APIs).
     """
 
-    # API configuration for Free Use Bible API
-    API_BASE = "https://api.freebible.io/json"
-    # Map translation names to API codes
+    # API configuration for Bible API (https://bible-api.com)
+    # Works with public domain and open translations
+    API_BASE = "https://bible-api.com"
+    # Bible API uses a simple format: /Book+Chapter:Verse
+    # Note: This API has limited translation support (primarily uses WEB - World English Bible)
+    # For KJV, NIV, ESV we use local cache or the API returns what's available
     API_TRANSLATION_MAP = {
-        "KJV": "kjv",
-        "NIV": "niv",
-        "ESV": "esv",
+        "KJV": "web",  # Falls back to available translation
+        "NIV": "web",
+        "ESV": "web",
     }
 
     # Local CJSB database (not available via free APIs)
@@ -107,40 +110,23 @@ class BiblicalWordLookup:
 
     def _fetch_verse_from_api(self, verse_ref: str, translation: str) -> Optional[str]:
         """
-        Fetch verse from Free Use Bible API.
+        Fetch verse from Bible API (https://bible-api.com).
         verse_ref format: "Book Chapter:Verse" (e.g., "John 1:1")
         Falls back gracefully if network unavailable.
         """
         try:
-            # Parse verse reference
-            parts = verse_ref.split()
-            if len(parts) < 2:
-                return None
+            # Format: "John 1:1" -> "John+1:1" for URL
+            book_chapter_verse = verse_ref.replace(" ", "+")
 
-            book = parts[0]
-            chapter_verse = parts[1].split(":")
-            if len(chapter_verse) != 2:
-                return None
-
-            chapter = chapter_verse[0]
-            verse = chapter_verse[1]
-
-            # Get API code for translation
-            api_trans = self.API_TRANSLATION_MAP.get(translation)
-            if not api_trans:
-                return None
-
-            # Call API
-            url = f"{self.API_BASE}/{api_trans}/{book}/{chapter}/{verse}"
+            # Call API - simple format
+            url = f"{self.API_BASE}/{book_chapter_verse}"
             response = requests.get(url, timeout=5)
 
             if response.status_code == 200:
                 data = response.json()
                 # API returns data with 'text' field
                 if isinstance(data, dict) and "text" in data:
-                    return data["text"]
-                elif isinstance(data, list) and len(data) > 0:
-                    return data[0].get("text")
+                    return data["text"].strip()
 
             return None
         except requests.exceptions.ConnectionError:
