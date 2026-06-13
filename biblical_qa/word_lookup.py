@@ -6,6 +6,7 @@ Uses Free Use Bible API for KJV, NIV, ESV and local cache for CJSB.
 import re
 import requests
 from typing import Dict, Tuple, Optional, List
+from biblical_qa.morphological_lexicon import get_lexicon
 from biblical_qa.concordance_data import get_word_definition, STRONGS_TO_VERSES
 
 class BiblicalWordLookup:
@@ -166,11 +167,20 @@ class BiblicalWordLookup:
         if word_pos == -1:
             return {"error": f"Word '{word}' not found in verse"}
 
-        # Get Strong's number
-        strongs_num = self._get_strongs_number(word, verse_ref)
+        # Get morphological data from lexicon
+        lexicon = get_lexicon()
+        morph_data = lexicon.lookup_word(word)
 
-        # Get word definition
-        word_def = get_word_definition(strongs_num)
+        # Build word analysis from morphological data
+        word_def = {
+            "hebrew_original": morph_data.get("surface") if morph_data else "N/A",
+            "transliteration": morph_data.get("transliteration") if morph_data else "",
+            "morphology": morph_data.get("morphology") if morph_data else "",
+            "strongs_number": "N/A",  # No longer using Strong's
+            "strongs_definition": morph_data.get("definition") if morph_data else f"Definition not found for '{word}'",
+            "lexicon_definition": morph_data.get("definition") if morph_data else "",
+            "pos": morph_data.get("pos") if morph_data else "unknown",
+        }
 
         # Get original language for verse
         original_verse = self.ORIGINAL_TEXTS.get(verse_ref, {})
@@ -183,7 +193,6 @@ class BiblicalWordLookup:
             },
             "word_found": True,
             "word_position": word_pos,
-            "strongs_number": strongs_num,
             "word_analysis": word_def,
             "verse_original": original_verse,
         }
