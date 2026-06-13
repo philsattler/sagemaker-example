@@ -81,6 +81,25 @@ HEBREW_LEXICON = {
         "root": "H982",
         "frequency": 120,
     },
+    # John 19:39
+    "G3952": {
+        "greek": "τελειόω",
+        "transliteration": "teleioō",
+        "morphology": "verb, aorist active indicative, third person singular",
+        "strongs_definition": "To accomplish, complete, finish; to make perfect or complete",
+        "theological_notes": "In John 19:28-30, Jesus says 'It is finished' (tetelestai - perfect tense of this verb), signifying the completion of His redemptive work. Essential to understanding the finality of Christ's sacrifice.",
+        "root": "G3952",
+        "frequency": 23,
+    },
+    "G4666": {
+        "greek": "σμύρνα",
+        "transliteration": "smyrna",
+        "morphology": "noun, feminine, singular, nominative",
+        "strongs_definition": "Myrrh; a fragrant resin used for anointing and burial",
+        "theological_notes": "Myrrh is associated with death and suffering in Scripture. At Jesus' birth, the Magi brought myrrh (Matthew 2:11); at His death, Nicodemus brought myrrh for burial (John 19:39). Symbolizes sacrifice, embalming, and preparation for eternity.",
+        "root": "G4666",
+        "frequency": 2,
+    },
 }
 
 # Thematic mappings for cross-references

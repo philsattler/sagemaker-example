@@ -11,8 +11,12 @@ python biblical_qa_cli.py Word in John 1:1 KJV
 ### New Testament
 
 ```bash
-# John 1:1 - The Word
+# John 1:1 - The Word (multiple translations)
 python biblical_qa_cli.py Word in John 1:1 KJV
+python biblical_qa_cli.py Word in John 1:1 CJSB
+
+# John 19:39 - Myrrh (CJSB - Complete Jewish Study Bible)
+python biblical_qa_cli.py myrrh in John 19:39 CJSB
 
 # Matthew 5:3 - Blessed
 python biblical_qa_cli.py Blessed in Matthew 5:3 KJV
@@ -45,6 +49,7 @@ python biblical_qa_cli.py Trust in Proverbs 3:5 KJV
 - **KJV** - King James Version
 - **NIV** - New International Version
 - **ESV** - English Standard Version
+- **CJSB** - The Complete Jewish Study Bible (David Stern)
 
 ## Query Format
 

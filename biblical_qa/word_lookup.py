@@ -28,6 +28,12 @@ class BiblicalWordLookup:
             "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
             "Proverbs 3:5": "Trust in the LORD with all your heart, and do not lean on your own understanding.",
         },
+        "CJSB": {
+            "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
+            "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
+            "Proverbs 3:5": "Put your trust in Adonai with all your heart; don't rely on your own understanding.",
+            "John 19:39": "Nicodemus also came, bringing myrrh and aloes, about a hundred pounds' weight.",
+        },
     }
 
     # Word to Strong's number mappings (simplified)
@@ -36,6 +42,8 @@ class BiblicalWordLookup:
         ("created", "Genesis 1:1"): "H1254",
         ("beginning", "Genesis 1:1"): "H7225",
         ("Trust", "Proverbs 3:5"): "H982",
+        ("Accomplished", "John 19:30"): "G3952",  # teleioo - to complete, accomplish
+        ("myrrh", "John 19:39"): "G4666",  # smyrna - myrrh
     }
 
     # Original language texts
@@ -71,6 +79,16 @@ class BiblicalWordLookup:
                 {"word": "בַּיהוָה", "trans": "baYHWH", "meaning": "in the LORD", "strongs": "H3068"},
                 {"word": "בְכָל", "trans": "bechol", "meaning": "with all", "strongs": "H3605"},
                 {"word": "לְבָבְךָ", "trans": "levavcha", "meaning": "your heart", "strongs": "H3824"},
+            ]
+        },
+        "John 19:39": {
+            "greek": "ἦλθεν οὖν καὶ Νικόδημος, ὁ ἐλθὼν πρὸς αὐτὸν νυκτὸς τὸ πρῶτον, φέρων μῖγμα σμύρνης καὶ ἀλόης ὡς λίτρας ἑκατόν.",
+            "transliteration": "ēlthen oun kai Nikodēmos, ho elthōn pros auton nyktos to prōton, pherōn migma smyrnēs kai aloēs hōs litras hekatón.",
+            "word_breakdown": [
+                {"word": "ἦλθεν", "trans": "ēlthen", "meaning": "came", "strongs": "G2064"},
+                {"word": "Νικόδημος", "trans": "Nikodēmos", "meaning": "Nicodemus", "strongs": "G3530"},
+                {"word": "σμύρνης", "trans": "smyrnēs", "meaning": "myrrh", "strongs": "G4666"},
+                {"word": "ἀλόης", "trans": "aloēs", "meaning": "aloes", "strongs": "G250"},
             ]
         },
     }
