@@ -16,7 +16,7 @@ class ModelConfig:
 # Model configurations: maps model name to instance type and hyperparameters
 MODEL_CONFIG = {
     "xgbregressor": ModelConfig(
-        instance_type="ml.m5.xlarge",
+        instance_type="ml.m5.large",
         instance_count=1,
         hyperparameters={
             "n_estimators": 100,
@@ -25,7 +25,7 @@ MODEL_CONFIG = {
         }
     ),
     "lightgbmclassifier": ModelConfig(
-        instance_type="ml.m5.xlarge",
+        instance_type="ml.m5.large",
         instance_count=1,
         hyperparameters={
             "n_estimators": 100,

@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any, List
 
 import boto3
 import numpy as np
-from sagemaker import Session
+from sagemaker.session import Session
 from sagemaker.model import Model
 
 from sagemaker_config import (

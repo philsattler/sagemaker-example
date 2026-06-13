@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 import boto3
-from sagemaker import Session
+from sagemaker.session import Session
 from sagemaker.estimator import Estimator
 from sagemaker.model import Model
 
