@@ -67,13 +67,25 @@ class BiblicalWordAnalyzer(BaseModel):
         strongs_num = word_lookup.get("strongs_number")
         word_def = word_lookup.get("word_analysis", {})
 
-        # Generate explanations
-        explanations = self.explainer.explain_word(
-            strongs_definition=word_def.get("strongs_definition", ""),
-            word_hebrew=word_def.get("hebrew", word_def.get("greek", "")),
-            theological_notes=word_def.get("theological_notes", ""),
-            context_verse=verse
-        )
+        # Check if word was actually found
+        word_found = word_def.get("strongs_definition") and word_def.get("strongs_definition") != f"Definition not found for '{word}'"
+
+        # Generate explanations only if word was found
+        if word_found:
+            explanations = self.explainer.explain_word(
+                strongs_definition=word_def.get("strongs_definition", ""),
+                word_hebrew=word_def.get("hebrew", word_def.get("greek", "")),
+                theological_notes=word_def.get("theological_notes", ""),
+                context_verse=verse
+            )
+        else:
+            # Word not found - provide helpful message
+            explanations = {
+                "simple_explanation": f"The English word '{word}' was not found in the Greek text of {verse}.",
+                "theological_explanation": "Try searching for the actual Greek word from that verse instead.",
+                "cultural_linguistic_notes": {},
+                "key_takeaway": "Use the Greek/Hebrew word directly for more accurate analysis."
+            }
 
         # Identify theme
         theme = self._identify_theme(word_def.get("theological_notes", ""))
