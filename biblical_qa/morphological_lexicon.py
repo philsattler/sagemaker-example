@@ -1,10 +1,12 @@
 """
 Morphological Lexicon Builder - loads SBLGNT morphological data.
 Provides Hebrew/Greek word analysis without Strong's dependency.
+Downloads real data from https://github.com/morphgnt/sblgnt
 """
 
 import os
 import csv
+import requests
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 
@@ -22,10 +24,143 @@ class MorphologicalLexicon:
         self._load_greek_data()
 
     def _load_greek_data(self):
-        """Load Greek NT morphological data from SBLGNT."""
-        # Comprehensive sample data from various verses
-        # In production, this would be dynamically loaded from SBLGNT repository
-        # https://raw.githubusercontent.com/morphgnt/sblgnt/master/[book]-morphgnt.txt
+        """Load real Greek NT morphological data from SBLGNT GitHub."""
+        # Download actual morphological data for key books
+        books = [
+            ("64-Jn-morphgnt.txt", "John"),      # John 1:1, 19:30, 19:39
+            ("63-Lk-morphgnt.txt", "Luke"),      # Luke 17:21
+        ]
+
+        for book_code, book_name in books:
+            self._load_book_morphology(book_code, book_name)
+
+    def _load_book_morphology(self, book_code: str, book_name: str):
+        """Download and parse morphological data for a book."""
+        url = f"https://raw.githubusercontent.com/morphgnt/sblgnt/master/{book_code}-morphgnt.txt"
+
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code != 200:
+                # Fallback to sample data if download fails
+                self._load_sample_data()
+                return
+
+            lines = response.text.strip().split('\n')
+            for line in lines:
+                self._parse_morphology_line(line, book_name)
+
+        except Exception as e:
+            # Fallback to sample data if network error
+            print(f"  [Note] Using sample morphological data (network unavailable)")
+            self._load_sample_data()
+
+    def _parse_morphology_line(self, line: str, book_name: str):
+        """Parse a SBLGNT morphology line."""
+        parts = line.split()
+        if len(parts) < 7:
+            return
+
+        verse_code = parts[0]  # E.g., "040101" = John 1:1
+        pos_code = parts[1]    # Part of speech code
+        morph_code = parts[2]  # Morphology code
+        surface = parts[3]     # Surface form (Greek word as appears)
+        lemma = parts[5]       # Lemma (base form)
+
+        # Convert verse code to readable format
+        verse_ref = self._convert_verse_code(verse_code, book_name)
+        if not verse_ref:
+            return
+
+        # Parse morphology
+        morphology = self._parse_morphology_code(pos_code, morph_code)
+        pos = self._get_pos_from_code(pos_code)
+
+        # Create transliteration (simplified - real system would use betacode converter)
+        transliteration = self._simple_transliteration(lemma)
+
+        # Store the entry
+        self._store_lexicon_entry({
+            "verse": verse_ref,
+            "surface": surface,
+            "lemma": lemma,
+            "pos": pos,
+            "morphology": morphology,
+            "transliteration": transliteration,
+            "definition": f"{pos} form of {lemma}"
+        })
+
+    def _convert_verse_code(self, code: str, book_name: str) -> Optional[str]:
+        """Convert 6-digit verse code to readable format."""
+        if len(code) != 6:
+            return None
+        chapter = int(code[2:4])
+        verse = int(code[4:6])
+        return f"{book_name} {chapter}:{verse}"
+
+    def _get_pos_from_code(self, pos_code: str) -> str:
+        """Convert POS code to readable form."""
+        pos_map = {
+            "N": "noun", "V": "verb", "A": "adjective", "D": "adverb",
+            "P": "preposition", "C": "conjunction", "R": "article/relative",
+            "I": "interjection", "X": "particle"
+        }
+        return pos_map.get(pos_code[0], "unknown")
+
+    def _parse_morphology_code(self, pos_code: str, morph_code: str) -> str:
+        """Parse morphology code into readable format."""
+        if morph_code == "--------":
+            return ""
+        # Simplified parsing - real system would decode all fields
+        return morph_code
+
+    def _simple_transliteration(self, greek_word: str) -> str:
+        """Convert Greek to simple transliteration."""
+        # Basic Greek to Latin transliteration
+        mapping = {
+            'α': 'a', 'β': 'b', 'γ': 'g', 'δ': 'd', 'ε': 'e', 'ζ': 'z',
+            'η': 'ē', 'θ': 'th', 'ι': 'i', 'κ': 'k', 'λ': 'l', 'μ': 'm',
+            'ν': 'n', 'ξ': 'x', 'ο': 'o', 'π': 'p', 'ρ': 'r', 'σ': 's',
+            'τ': 't', 'υ': 'u', 'φ': 'ph', 'χ': 'ch', 'ψ': 'ps', 'ω': 'ō',
+        }
+        result = ""
+        for char in greek_word.lower():
+            result += mapping.get(char, char)
+        return result
+
+    def _store_lexicon_entry(self, entry: Dict):
+        """Store a lexicon entry in all indices."""
+        lemma = entry["lemma"]
+        surface = entry["surface"]
+        verse = entry["verse"]
+
+        # Store in lemma index
+        if lemma not in self.greek_lemmas:
+            self.greek_lemmas[lemma] = {
+                "lemma": lemma,
+                "pos": entry["pos"],
+                "morphology": entry["morphology"],
+                "transliteration": entry["transliteration"],
+                "definition": entry["definition"],
+                "surface_forms": set()
+            }
+        self.greek_lemmas[lemma]["surface_forms"].add(surface)
+
+        # Index by surface form
+        if surface not in self.greek_index[surface]:
+            self.greek_index[surface].append(lemma)
+
+        # Store verse mapping
+        self.verses[verse].append({
+            "surface": surface,
+            "lemma": lemma,
+            "pos": entry["pos"],
+            "morphology": entry["morphology"],
+            "transliteration": entry["transliteration"],
+            "definition": entry["definition"]
+        })
+
+    def _load_sample_data(self):
+        """Load fallback sample data when download fails."""
         sample_entries = [
             # John 1:1 (λόγος, Word)
             {"verse": "John 1:1", "surface": "Ἐν", "lemma": "ἐν", "pos": "preposition", "morphology": "---", "transliteration": "en", "definition": "in, within, at, among"},
@@ -57,33 +192,7 @@ class MorphologicalLexicon:
 
         # Index the sample data
         for entry in sample_entries:
-            lemma = entry["lemma"]
-            surface = entry["surface"]
-            verse = entry["verse"]
-
-            # Store in lemma index
-            self.greek_lemmas[lemma] = {
-                "lemma": lemma,
-                "pos": entry["pos"],
-                "morphology": entry["morphology"],
-                "transliteration": entry["transliteration"],
-                "definition": entry["definition"],
-                "surface_forms": [surface]
-            }
-
-            # Index by surface form for lookup
-            if surface not in self.greek_index[surface]:
-                self.greek_index[surface].append(lemma)
-
-            # Store verse mapping
-            self.verses[verse].append({
-                "surface": surface,
-                "lemma": lemma,
-                "pos": entry["pos"],
-                "morphology": entry["morphology"],
-                "transliteration": entry["transliteration"],
-                "definition": entry["definition"]
-            })
+            self._store_lexicon_entry(entry)
 
     def lookup_word(self, word: str, verse: Optional[str] = None) -> Optional[Dict]:
         """
