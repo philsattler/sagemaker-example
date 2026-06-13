@@ -1,40 +1,39 @@
 """
 Biblical Word Lookup Engine - Core system for word/verse analysis.
+Uses Free Use Bible API for KJV, NIV, ESV and local cache for CJSB.
 """
 
 import re
+import requests
 from typing import Dict, Tuple, Optional, List
 from biblical_qa.concordance_data import get_word_definition, STRONGS_TO_VERSES
 
 class BiblicalWordLookup:
     """
     Looks up words in Bible verses and maps to original Hebrew/Greek.
+    Uses Free Use Bible API (https://freebible.io) for KJV, NIV, ESV.
+    CJSB is stored locally (not available via free APIs).
     """
 
-    # Simplified Bible database (in production, use APIs)
-    BIBLE_DATABASE = {
-        "NIV": {
-            "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
-            "Genesis 1:1": "In the beginning God created the heavens and the earth.",
-            "Proverbs 3:5": "Trust in the LORD with all your heart and lean not on your own understanding;",
-        },
-        "KJV": {
-            "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
-            "Genesis 1:1": "In the beginning God created the heaven and the earth.",
-            "Proverbs 3:5": "Trust in the LORD with all thine heart; and lean not unto thine own understanding;",
-        },
-        "ESV": {
-            "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
-            "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
-            "Proverbs 3:5": "Trust in the LORD with all your heart, and do not lean on your own understanding.",
-        },
-        "CJSB": {
-            "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
-            "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
-            "Proverbs 3:5": "Put your trust in Adonai with all your heart; don't rely on your own understanding.",
-            "John 19:30": "After Yeshua had taken the wine, he said, \"It is accomplished!\" And, letting his head droop, he delivered up his spirit.",
-            "John 19:39": "Nicodemus also came, bringing myrrh and aloes, about a hundred pounds' weight.",
-        },
+    # API configuration for Free Use Bible API
+    API_BASE = "https://api.freebible.io/json"
+    # Map translation names to API codes
+    API_TRANSLATION_MAP = {
+        "KJV": "kjv",
+        "NIV": "niv",
+        "ESV": "esv",
+    }
+
+    # Local CJSB database (not available via free APIs)
+    # Format: "Book Chapter:Verse" -> "verse text"
+    # Add more verses here as needed - they won't be available via API
+    CJSB_DATABASE = {
+        "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
+        "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
+        "Proverbs 3:5": "Put your trust in Adonai with all your heart; don't rely on your own understanding.",
+        "John 19:30": "After Yeshua had taken the wine, he said, \"It is accomplished!\" And, letting his head droop, he delivered up his spirit.",
+        "John 19:39": "Nicodemus also came, bringing myrrh and aloes, about a hundred pounds' weight.",
+        "Luke 17:21": "The kingdom of God is not coming with signs you can observe. People can't say, 'Look, here it is!' or 'There it is!' For you see, the kingdom of God is in your midst.",
     }
 
     # Word to Strong's number mappings (simplified)
@@ -106,6 +105,51 @@ class BiblicalWordLookup:
         },
     }
 
+    def _fetch_verse_from_api(self, verse_ref: str, translation: str) -> Optional[str]:
+        """
+        Fetch verse from Free Use Bible API.
+        verse_ref format: "Book Chapter:Verse" (e.g., "John 1:1")
+        Falls back gracefully if network unavailable.
+        """
+        try:
+            # Parse verse reference
+            parts = verse_ref.split()
+            if len(parts) < 2:
+                return None
+
+            book = parts[0]
+            chapter_verse = parts[1].split(":")
+            if len(chapter_verse) != 2:
+                return None
+
+            chapter = chapter_verse[0]
+            verse = chapter_verse[1]
+
+            # Get API code for translation
+            api_trans = self.API_TRANSLATION_MAP.get(translation)
+            if not api_trans:
+                return None
+
+            # Call API
+            url = f"{self.API_BASE}/{api_trans}/{book}/{chapter}/{verse}"
+            response = requests.get(url, timeout=5)
+
+            if response.status_code == 200:
+                data = response.json()
+                # API returns data with 'text' field
+                if isinstance(data, dict) and "text" in data:
+                    return data["text"]
+                elif isinstance(data, list) and len(data) > 0:
+                    return data[0].get("text")
+
+            return None
+        except requests.exceptions.ConnectionError:
+            # No internet - API unavailable but don't spam warnings
+            return None
+        except Exception as e:
+            # Other errors - log but continue
+            return None
+
     def lookup_word(
         self,
         word: str,
@@ -114,11 +158,20 @@ class BiblicalWordLookup:
     ) -> Dict:
         """
         Look up a word in a specific verse.
+        Uses API for KJV/NIV/ESV, local cache for CJSB.
         """
         print(f"  Looking up '{word}' in {verse_ref} ({translation})...")
 
         # Get the verse
-        verse_text = self.BIBLE_DATABASE.get(translation, {}).get(verse_ref)
+        verse_text = None
+
+        if translation == "CJSB":
+            # CJSB is local only
+            verse_text = self.CJSB_DATABASE.get(verse_ref)
+        else:
+            # Try API first for KJV, NIV, ESV
+            verse_text = self._fetch_verse_from_api(verse_ref, translation)
+
         if not verse_text:
             return {"error": f"Verse not found: {verse_ref} in {translation}"}
 
