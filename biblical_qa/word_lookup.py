@@ -171,9 +171,23 @@ class BiblicalWordLookup:
         lexicon = get_lexicon()
         morph_data = lexicon.lookup_word(word)
 
+        # Get the Greek/Hebrew surface form (not English translation)
+        original_word = "N/A"
+        if morph_data:
+            # If we found morphological data, use the lemma (original language)
+            lemma = morph_data.get("lemma", word)
+            # Check if lemma is in Greek/Hebrew (not ASCII)
+            try:
+                lemma.encode('ascii')
+                # If it's ASCII, it's English - use surface form instead
+                original_word = morph_data.get("surface", "N/A")
+            except UnicodeEncodeError:
+                # Not ASCII - this is Greek/Hebrew, use it
+                original_word = lemma
+
         # Build word analysis from morphological data
         word_def = {
-            "hebrew_original": morph_data.get("surface") if morph_data else "N/A",
+            "hebrew_original": original_word if original_word and not original_word.isascii() else "N/A",
             "transliteration": morph_data.get("transliteration") if morph_data else "",
             "morphology": morph_data.get("morphology") if morph_data else "",
             "strongs_number": "N/A",  # No longer using Strong's

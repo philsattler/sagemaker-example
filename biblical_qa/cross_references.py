@@ -25,7 +25,11 @@ class CrossReferenceGenerator:
     ) -> List[Dict]:
         """
         Generate cross-references for a Strong's number.
+        Returns empty list if Strong's data not available.
         """
+        if not strongs_number or strongs_number == "N/A":
+            return []
+
         print(f"  Generating cross-references for {strongs_number}...")
 
         # Get all verses with this word

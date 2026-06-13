@@ -89,7 +89,7 @@ class BiblicalWordAnalyzer(BaseModel):
         result = {
             "query": word_lookup["query"],
             "word_analysis": {
-                "hebrew_original": word_def.get("hebrew", word_def.get("greek", "N/A")),
+                "hebrew_original": word_def.get("hebrew_original", word_def.get("hebrew", word_def.get("greek", "N/A"))),
                 "transliteration": word_def.get("transliteration", ""),
                 "morphology": word_def.get("morphology", ""),
                 "strongs_number": strongs_num,

@@ -63,6 +63,7 @@ class MorphologicalLexicon:
 
             # Store in lemma index
             self.greek_lemmas[lemma] = {
+                "lemma": lemma,
                 "pos": entry["pos"],
                 "morphology": entry["morphology"],
                 "transliteration": entry["transliteration"],
