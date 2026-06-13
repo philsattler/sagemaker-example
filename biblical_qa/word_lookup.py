@@ -32,6 +32,7 @@ class BiblicalWordLookup:
             "John 1:1": "In the beginning was the Word, and the Word was with God, and the Word was God.",
             "Genesis 1:1": "In the beginning, God created the heavens and the earth.",
             "Proverbs 3:5": "Put your trust in Adonai with all your heart; don't rely on your own understanding.",
+            "John 19:30": "After Yeshua had taken the wine, he said, \"It is accomplished!\" And, letting his head droop, he delivered up his spirit.",
             "John 19:39": "Nicodemus also came, bringing myrrh and aloes, about a hundred pounds' weight.",
         },
     }
@@ -79,6 +80,18 @@ class BiblicalWordLookup:
                 {"word": "בַּיהוָה", "trans": "baYHWH", "meaning": "in the LORD", "strongs": "H3068"},
                 {"word": "בְכָל", "trans": "bechol", "meaning": "with all", "strongs": "H3605"},
                 {"word": "לְבָבְךָ", "trans": "levavcha", "meaning": "your heart", "strongs": "H3824"},
+            ]
+        },
+        "John 19:30": {
+            "greek": "ὅτε οὖν ἔλαβεν τὸ ὄξος [ὁ] Ἰησοῦς εἶπεν, Τετέλεσται· καὶ κλίνας τὴν κεφαλὴν παρέδωκεν τὸ πνεῦμα.",
+            "transliteration": "hote oun elaben to oxos ho Iēsous eipen, Tetelestai; kai klinas tēn kephalēn paredōken to pneuma.",
+            "word_breakdown": [
+                {"word": "ἔλαβεν", "trans": "elaben", "meaning": "took", "strongs": "G2983"},
+                {"word": "Ἰησοῦς", "trans": "Iēsous", "meaning": "Jesus", "strongs": "G2424"},
+                {"word": "εἶπεν", "trans": "eipen", "meaning": "said", "strongs": "G3004"},
+                {"word": "Τετέλεσται", "trans": "Tetelestai", "meaning": "It is finished", "strongs": "G3952"},
+                {"word": "παρέδωκεν", "trans": "paredōken", "meaning": "gave up", "strongs": "G3860"},
+                {"word": "πνεῦμα", "trans": "pneuma", "meaning": "spirit", "strongs": "G4151"},
             ]
         },
         "John 19:39": {
