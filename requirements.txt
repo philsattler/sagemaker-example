@@ -7,6 +7,10 @@ lightgbm==4.6.0
 numpy==1.26.4
 pandas>=2.2.0
 
+# RAG and NLP
+sentence-transformers==2.7.0
+torch==2.1.2
+
 # AWS and utilities
 python-dotenv==1.0.0
 pydantic==2.9.1

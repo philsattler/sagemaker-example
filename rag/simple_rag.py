@@ -1,22 +1,29 @@
 """
 Simple Document Q&A RAG System using KJV Bible corpus.
-Uses vector similarity search + Claude for answer generation.
+Uses SentenceTransformers for semantic embeddings + vector similarity search.
 """
 
 import json
 import numpy as np
 from typing import List, Dict, Tuple
 from pathlib import Path
+from sentence_transformers import SentenceTransformer
 
 
 class SimpleRAG:
-    """Simple RAG system for document Q&A."""
+    """Simple RAG system for document Q&A using semantic embeddings."""
 
     def __init__(self, corpus_path: str = "data/kjv_corpus.json"):
-        """Initialize RAG system with corpus."""
+        """Initialize RAG system with corpus and embeddings model."""
         self.corpus_path = Path(corpus_path)
         self.documents: List[Dict] = []
         self.embeddings: np.ndarray = None
+
+        # Initialize SentenceTransformers model (semantic embeddings)
+        print("🤖 Loading SentenceTransformer model...")
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        print("✅ Model loaded (384-dimensional semantic embeddings)")
+
         self._load_corpus()
 
     def _load_corpus(self) -> None:
@@ -34,48 +41,34 @@ class SimpleRAG:
 
         print(f"✅ Loaded {len(self.documents)} documents from corpus")
 
-    def _simple_embedding(self, text: str) -> np.ndarray:
-        """Create a simple embedding using word frequency (not ML-based)."""
-        # This is a placeholder - in production we'd use Claude embeddings API
-        # For now, use simple TF (term frequency) vector
-
-        # Get unique words
-        words = set(text.lower().split())
-
-        # Create a fixed-size vector (hashing trick)
-        embedding = np.zeros(100)
-        for word in words:
-            # Hash word to index
-            idx = hash(word) % 100
-            embedding[idx] += 1
-
-        # Normalize
-        norm = np.linalg.norm(embedding)
-        if norm > 0:
-            embedding = embedding / norm
-
-        return embedding
+    def _embed_text(self, text: str) -> np.ndarray:
+        """Create semantic embedding using SentenceTransformer."""
+        return self.model.encode(text, convert_to_numpy=True)
 
     def _compute_embeddings(self) -> None:
-        """Compute embeddings for all documents."""
-        embeddings = []
-        for doc in self.documents:
-            emb = self._simple_embedding(doc["text"])
-            embeddings.append(emb)
+        """Compute semantic embeddings for all documents using SentenceTransformer."""
+        texts = [doc["text"] for doc in self.documents]
+
+        # Batch encode for efficiency
+        embeddings = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
 
         self.embeddings = np.array(embeddings)
-        print(f"✅ Computed embeddings for {len(embeddings)} documents")
+        print(f"✅ Computed {len(embeddings)} semantic embeddings (384-dim)")
 
     def retrieve(self, query: str, k: int = 3) -> List[Tuple[Dict, float]]:
-        """Retrieve top-k relevant documents for a query."""
+        """Retrieve top-k semantically relevant documents for a query."""
         if self.embeddings is None:
             self._compute_embeddings()
 
-        # Embed the query
-        query_emb = self._simple_embedding(query)
+        # Embed the query semantically
+        query_emb = self._embed_text(query)
 
-        # Compute similarity with all documents (cosine similarity)
-        similarities = self.embeddings @ query_emb
+        # Compute cosine similarity with all documents
+        # Normalize for cosine similarity
+        query_emb_norm = query_emb / np.linalg.norm(query_emb)
+        embeddings_norm = self.embeddings / np.linalg.norm(self.embeddings, axis=1, keepdims=True)
+
+        similarities = embeddings_norm @ query_emb_norm
 
         # Get top-k indices
         top_k_indices = np.argsort(similarities)[-k:][::-1]
