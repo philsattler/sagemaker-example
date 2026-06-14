@@ -33,14 +33,6 @@ MODEL_CONFIG = {
             "learning_rate": 0.1,
         }
     ),
-    "biblical_qa": ModelConfig(
-        instance_type="ml.m5.large",
-        instance_count=1,
-        hyperparameters={
-            "model_type": "biblical_word_analyzer",
-            "description": "Biblical Word Analyzer - Hebrew/Greek word lookup, Strong's concordance, cross-references",
-        }
-    ),
 }
 
 # AWS configuration
