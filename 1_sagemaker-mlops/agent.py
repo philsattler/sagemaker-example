@@ -70,15 +70,15 @@ class TrainingAgent:
         job_name = self._generate_job_name(model_name)
 
         logger.info(f"Starting training job: {job_name}")
-        logger.info(f"Model: {model_name}, Instance: {config.instance_type}")
+        logger.info(f"Model: {model_name}, Instance: {config.training_instance_type}")
         logger.info(f"Image: {image_uri}")
 
-        # Create estimator
+        # Create estimator (use training instance type, not inference)
         estimator = Estimator(
             image_uri=image_uri,
             role=self.role_arn,
-            instance_count=config.instance_count,
-            instance_type=config.instance_type,
+            instance_count=config.training_instance_count,
+            instance_type=config.training_instance_type,
             output_path=S3_TRAINING_OUTPUT,
             sagemaker_session=self.sagemaker_session,
             hyperparameters=job_hyperparameters,

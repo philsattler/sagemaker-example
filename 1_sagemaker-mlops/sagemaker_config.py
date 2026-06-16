@@ -4,20 +4,35 @@ from typing import Dict, Any
 
 @dataclass
 class ModelConfig:
-    """Configuration for a model."""
-    instance_type: str
-    instance_count: int
+    """Configuration for a model (training and inference)."""
+    # Training instances (ephemeral, used once per training)
+    training_instance_type: str
+    training_instance_count: int = 1
+
+    # Inference instances (persistent, can run 24/7)
+    inference_instance_type: str = None  # If None, defaults to training_instance_type
+    inference_instance_count: int = 1
+
     hyperparameters: Dict[str, Any] = None
 
     def __post_init__(self):
         if self.hyperparameters is None:
             self.hyperparameters = {}
+        # Fallback: if inference not specified, use training instance
+        if self.inference_instance_type is None:
+            self.inference_instance_type = self.training_instance_type
 
-# Model configurations: maps model name to instance type and hyperparameters
+# Model configurations
 MODEL_CONFIG = {
     "xgbregressor": ModelConfig(
-        instance_type="ml.m5.large",
-        instance_count=1,
+        # Training: Use GPU for faster training (runs for a few hours)
+        training_instance_type="ml.p3.2xlarge",  # GPU, $3.06/hour
+        training_instance_count=1,
+
+        # Inference: Use cheaper CPU (runs 24/7 or on-demand)
+        inference_instance_type="ml.t3.medium",  # CPU only, $0.042/hour
+        inference_instance_count=1,
+
         hyperparameters={
             "n_estimators": 100,
             "max_depth": 6,
@@ -25,8 +40,14 @@ MODEL_CONFIG = {
         }
     ),
     "lightgbmclassifier": ModelConfig(
-        instance_type="ml.m5.large",
-        instance_count=1,
+        # Training: GPU for faster training
+        training_instance_type="ml.p3.2xlarge",
+        training_instance_count=1,
+
+        # Inference: Cheaper CPU
+        inference_instance_type="ml.t3.medium",
+        inference_instance_count=1,
+
         hyperparameters={
             "n_estimators": 100,
             "max_depth": 6,

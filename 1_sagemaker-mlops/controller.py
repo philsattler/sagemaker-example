@@ -42,7 +42,7 @@ class InferenceController:
         model_name: str,
         model_version: Optional[str] = None,
         instance_type: Optional[str] = None,
-        instance_count: int = 1,
+        instance_count: Optional[int] = None,
         wait: bool = True,
     ) -> "InferenceEndpoint":
         """
@@ -51,15 +51,17 @@ class InferenceController:
         Args:
             model_name: Name of model to deploy
             model_version: Specific model version (latest if not specified)
-            instance_type: EC2 instance type (uses config if not specified)
-            instance_count: Number of instances
+            instance_type: EC2 instance type (uses inference config if not specified)
+            instance_count: Number of instances (uses inference config if not specified)
             wait: Whether to wait for endpoint to be active
 
         Returns:
             InferenceEndpoint: Endpoint object for making predictions
         """
         config = get_model_config(model_name)
-        instance_type = instance_type or config.instance_type
+        # Use inference-specific instance type and count (not training)
+        instance_type = instance_type or config.inference_instance_type
+        instance_count = instance_count or config.inference_instance_count
 
         # Get latest model from registry
         model_name_obj = self._get_latest_model(model_name, model_version)

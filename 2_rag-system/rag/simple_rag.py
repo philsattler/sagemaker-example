@@ -1,6 +1,6 @@
 """
 Simple Document Q&A RAG System using KJV Bible corpus.
-Uses SentenceTransformers for semantic embeddings + vector similarity search.
+Hybrid retrieval: combines BM25 (keyword) + semantic embeddings.
 """
 
 import json
@@ -8,16 +8,18 @@ import numpy as np
 from typing import List, Dict, Tuple
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
+from rank_bm25 import BM25Okapi
 
 
 class SimpleRAG:
     """Simple RAG system for document Q&A using semantic embeddings."""
 
-    def __init__(self, corpus_path: str = "data/kjv_corpus.json"):
+    def __init__(self, corpus_path: str = "data/kjv_corpus_full.json"):
         """Initialize RAG system with corpus and embeddings model."""
         self.corpus_path = Path(corpus_path)
         self.documents: List[Dict] = []
         self.embeddings: np.ndarray = None
+        self.bm25: BM25Okapi = None
 
         # Initialize SentenceTransformers model (semantic embeddings)
         print("🤖 Loading SentenceTransformer model...")
@@ -25,6 +27,7 @@ class SimpleRAG:
         print("✅ Model loaded (384-dimensional semantic embeddings)")
 
         self._load_corpus()
+        self._initialize_bm25()
 
     def _load_corpus(self) -> None:
         """Load documents from corpus file."""
@@ -41,43 +44,77 @@ class SimpleRAG:
 
         print(f"✅ Loaded {len(self.documents)} documents from corpus")
 
+    def _initialize_bm25(self) -> None:
+        """Initialize BM25 for keyword-based retrieval."""
+        texts = [doc["text"] for doc in self.documents]
+        # Tokenize by splitting on whitespace and lowercasing
+        tokenized_texts = [text.lower().split() for text in texts]
+        self.bm25 = BM25Okapi(tokenized_texts)
+        print("✅ BM25 index built for hybrid retrieval")
+
     def _embed_text(self, text: str) -> np.ndarray:
         """Create semantic embedding using SentenceTransformer."""
         return self.model.encode(text, convert_to_numpy=True)
 
     def _compute_embeddings(self) -> None:
         """Compute semantic embeddings for all documents using SentenceTransformer."""
+        embeddings_cache = Path("data/.embeddings_cache.npy")
+
+        # Try to load from cache first
+        if embeddings_cache.exists():
+            print("📦 Loading cached embeddings...")
+            self.embeddings = np.load(embeddings_cache)
+            print(f"✅ Loaded {len(self.embeddings)} cached embeddings (384-dim)")
+            return
+
         texts = [doc["text"] for doc in self.documents]
 
         # Batch encode for efficiency
+        print("🔄 Computing embeddings (this may take a moment)...")
         embeddings = self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
 
         self.embeddings = np.array(embeddings)
+
+        # Cache for future runs
+        embeddings_cache.parent.mkdir(exist_ok=True)
+        np.save(embeddings_cache, self.embeddings)
+
         print(f"✅ Computed {len(embeddings)} semantic embeddings (384-dim)")
+        print(f"💾 Cached to {embeddings_cache}")
 
     def retrieve(self, query: str, k: int = 3) -> List[Tuple[Dict, float]]:
-        """Retrieve top-k semantically relevant documents for a query."""
+        """Retrieve top-k documents using hybrid BM25 + semantic search."""
         if self.embeddings is None:
             self._compute_embeddings()
 
-        # Embed the query semantically
+        # Semantic scores (cosine similarity)
         query_emb = self._embed_text(query)
-
-        # Compute cosine similarity with all documents
-        # Normalize for cosine similarity
         query_emb_norm = query_emb / np.linalg.norm(query_emb)
         embeddings_norm = self.embeddings / np.linalg.norm(self.embeddings, axis=1, keepdims=True)
+        semantic_scores = embeddings_norm @ query_emb_norm
 
-        similarities = embeddings_norm @ query_emb_norm
+        # Normalize semantic scores to [0, 1]
+        semantic_scores = (semantic_scores + 1) / 2
+
+        # BM25 scores (keyword-based)
+        query_tokens = query.lower().split()
+        bm25_scores = np.array(self.bm25.get_scores(query_tokens))
+
+        # Normalize BM25 scores to [0, 1]
+        if bm25_scores.max() > 0:
+            bm25_scores = bm25_scores / bm25_scores.max()
+
+        # Hybrid score: average of both (equal weight)
+        hybrid_scores = (semantic_scores + bm25_scores) / 2
 
         # Get top-k indices
-        top_k_indices = np.argsort(similarities)[-k:][::-1]
+        top_k_indices = np.argsort(hybrid_scores)[-k:][::-1]
 
-        # Return documents with scores
+        # Return documents with hybrid scores
         results = []
         for idx in top_k_indices:
             doc = self.documents[idx]
-            score = float(similarities[idx])
+            score = float(hybrid_scores[idx])
             results.append((doc, score))
 
         return results
@@ -120,19 +157,3 @@ class SimpleRAG:
             print(f"   {doc['text']}\n")
 
         print(f"{'=' * 80}")
-
-
-# Example usage
-if __name__ == "__main__":
-    rag = SimpleRAG()
-
-    # Test queries
-    test_queries = [
-        "What does the Bible say about trust?",
-        "Tell me about creation",
-        "What does it say about love?",
-    ]
-
-    for query in test_queries:
-        results = rag.answer_question(query, k=2)
-        rag.print_results(results)

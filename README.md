@@ -1,308 +1,204 @@
-# SageMaker MLOps Pipeline
+# 🏗️ Python Data Engineering Projects
 
-An end-to-end MLOps pipeline for training and deploying ML models using AWS SageMaker, ECR, and S3.
+A collection of three independent but interconnected projects demonstrating modern data engineering, machine learning, and distributed computing concepts.
 
-## Features
+## 📂 Projects
 
-- **Model-agnostic Docker image**: Single container runs any model type
-- **SageMaker Model Registry**: Native versioning and lineage tracking
-- **Flexible model implementations**: Easily add new model types (XGBoost, LightGBM, etc.)
-- **Training orchestration**: Spin up training jobs on-demand
-- **Inference endpoints**: Deploy trained models as real-time inference endpoints
-- **CI/CD automation**: GitHub Actions auto-builds and pushes Docker images to ECR
+### 1️⃣ [SageMaker MLOps Pipeline](./1_sagemaker-mlops/)
+End-to-end machine learning pipeline using AWS SageMaker for training and inference. Demonstrates model orchestration, containerization, and cloud deployment.
 
-## Quick Start
+**Use this to learn about:**
+- AWS SageMaker training jobs
+- Docker containerization
+- Model versioning and registry
+- Endpoint management
+- Infrastructure as Code (IAC)
 
-### Prerequisites
-
-1. AWS Account with appropriate IAM permissions
-2. S3 bucket for model artifacts
-3. ECR repository for Docker images
-4. SageMaker execution role with access to S3, ECR, and CloudWatch
-5. Python 3.11+
-
-### Setup
-
-1. **Clone the repo**
-   ```bash
-   git clone <repo-url>
-   cd sagemaker-example
-   ```
-
-2. **Set environment variables**
-   ```bash
-   export AWS_REGION=us-east-1
-   export AWS_ACCOUNT_ID=123456789012
-   export ECR_REPO_NAME=sagemaker-mlops
-   export S3_BUCKET=your-account-sagemaker-artifacts
-   export SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/SageMakerMLOpsRole
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Create an IAM role** (see IAM Setup section in CLAUDE.md)
-
-### Training a Model
-
-```python
-from agent import TrainingAgent
-
-agent = TrainingAgent()
-
-# Start training job
-job_name = agent.train(
-    model_name="xgbregressor",
-    image_tag="latest",
-    wait=True  # Wait for job to complete
-)
-
-print(f"Training job: {job_name}")
-
-# Check job status
-job_info = agent.describe_job(job_name)
-print(f"Status: {job_info['TrainingJobStatus']}")
+**Get started:**
+```bash
+cd 1_sagemaker-mlops
+python agent.py --model xgbregressor
 ```
 
-View logs in SageMaker console: **Training → Jobs → [job_name] → Logs**
+---
 
-### Deploying an Inference Endpoint
+### 2️⃣ [Bible Q&A RAG System](./2_rag-system/)
+Retrieval-Augmented Generation system for semantic search over the KJV Bible. Combines BM25 keyword search with neural embeddings for intelligent document retrieval.
 
-```python
-from controller import InferenceController
+**Use this to learn about:**
+- Vector embeddings (SentenceTransformers)
+- Hybrid search (semantic + keyword)
+- RAG architecture
+- Information retrieval
+- Semantic similarity
 
-controller = InferenceController()
-
-# Deploy latest model version
-endpoint = controller.deploy(
-    model_name="xgbregressor",
-    wait=True  # Wait for endpoint to be active
-)
-
-print(f"Endpoint: {endpoint}")
-
-# Make predictions
-test_data = [[1.0, 2.0, 3.0, 4.0]]
-predictions = endpoint.predict(test_data)
-print(f"Predictions: {predictions}")
-
-# Cleanup when done
-endpoint.delete()
+**Get started:**
+```bash
+cd 2_rag-system
+python rag_cli.py "What does the Bible say about faith?"
 ```
 
-### Adding a New Model Type
+---
 
-1. Create `models/mynewmodel.py`:
-   ```python
-   from models.base import BaseModel
+### 3️⃣ [Spark Learning: Distributed Computing](./3_spark-learning/)
+Self-paced tutorial for learning Apache Spark and distributed computing fundamentals. Process large datasets across multiple CPU cores with the same code that scales to cloud clusters.
 
-   class MyNewModel(BaseModel):
-       def __init__(self, **kwargs):
-           super().__init__()
-           # Initialize model
+**Use this to learn about:**
+- Apache Spark architecture
+- Partitioning and parallelization
+- MapReduce pattern
+- Lazy evaluation
+- Scaling from laptop to cloud
 
-       def train(self, X, y, **kwargs):
-           # Training logic
-           pass
+**Get started:**
+```bash
+cd 3_spark-learning
+# Follow YOUR_LEARNING_STRUCTURE.md and QUICK_START.md
+spark-submit spark_embedding_simple.py
+```
 
-       def predict(self, X):
-           # Prediction logic
-           pass
-   ```
+---
 
-2. Register in `sagemaker_config.py`:
-   ```python
-   MODEL_CONFIG = {
-       # ... existing models ...
-       "mynewmodel": ModelConfig(
-           instance_type="ml.m5.xlarge",
-           instance_count=1,
-           hyperparameters={"param1": "value1"}
-       )
-   }
-   ```
-
-3. Add to `models/__init__.py`:
-   ```python
-   from models.mynewmodel import MyNewModel
-
-   models = {
-       # ... existing mappings ...
-       "mynewmodel": MyNewModel,
-   }
-   ```
-
-## Project Structure
+## 🗂️ Repository Structure
 
 ```
 .
-├── CLAUDE.md                          # Architecture documentation
-├── README.md                          # This file
-├── requirements.txt                   # Python dependencies
-├── iam_policy.json                    # IAM permissions policy
-├── sagemaker_config.py                # Model configs and AWS settings
-├── agent.py                           # Training orchestrator
-├── controller.py                      # Inference orchestrator
-├── models/
-│   ├── base.py                        # Abstract base class
-│   ├── xgbregressor.py                # XGBoost example
-│   └── lightgbmclassifier.py          # LightGBM example
-├── training/
-│   ├── entry.py                       # Training entry point (runs in container)
-│   └── data.py                        # Data loading utilities
-├── inference/
-│   └── entry.py                       # Inference entry point (runs in container)
-├── docker/
-│   ├── Dockerfile                     # Container definition
-│   └── entrypoint.sh                  # Container entry script
-└── .github/workflows/
-    └── docker-build-push.yml          # GitHub Action for CI/CD
+├── README.md                    # This file
+├── pyproject.toml              # Python dependencies (uv)
+├── docs/                        # Shared documentation
+│   ├── CLAUDE.md               # Project instructions
+│   └── ARCHITECTURE.md         # System design
+│
+├── 1_sagemaker-mlops/          # AWS ML Pipeline
+│   ├── README.md
+│   ├── agent.py
+│   ├── controller.py
+│   ├── models/
+│   ├── training/
+│   ├── inference/
+│   └── .github/workflows/
+│
+├── 2_rag-system/               # Bible Q&A RAG
+│   ├── README.md
+│   ├── rag_cli.py
+│   ├── rag/
+│   ├── data/
+│   └── ARCHITECTURE.md
+│
+├── 3_spark-learning/           # Distributed Computing
+│   ├── README.md
+│   ├── spark_embedding_simple.py
+│   ├── convert_parquet_to_csv.py
+│   ├── analyze_results.py
+│   ├── QUICK_START.md
+│   ├── SPARK_LEARNING_MAP.md
+│   └── data/
+│
+├── docker/                      # Shared Docker image
+│   └── Dockerfile
+│
+└── tests/                       # Shared tests
 ```
 
-## Local Testing
+---
 
-Test models locally before pushing to ECR:
+## 🚀 Quick Navigation
 
+| Project | Learn | Time | Difficulty |
+|---------|-------|------|-----------|
+| **SageMaker** | AWS cloud ML | 2-4 hours | Intermediate |
+| **RAG System** | Semantic search | 1-2 hours | Beginner-Intermediate |
+| **Spark** | Distributed computing | 2-3 hours | Intermediate-Advanced |
+
+---
+
+## 🛠️ Setup
+
+### Prerequisites
+- Python 3.13+
+- `uv` package manager
+- AWS credentials (for SageMaker only)
+- Java (for Spark)
+
+### Install Dependencies
 ```bash
-# Test training
-python -c "
-from models.xgbregressor import XGBRegressor
-import numpy as np
-
-X = np.random.rand(100, 4)
-y = np.random.rand(100)
-
-model = XGBRegressor()
-model.train(X, y)
-print('Training successful!')
-"
-
-# Test inference
-python -c "
-from models.xgbregressor import XGBRegressor
-import numpy as np
-
-X_test = np.random.rand(10, 4)
-model = XGBRegressor()
-model.train(np.random.rand(100, 4), np.random.rand(100))
-predictions = model.predict(X_test)
-print(f'Predictions: {predictions}')
-"
+uv sync
 ```
 
-## Docker Build Locally
-
+### Environment Variables
 ```bash
-docker build -t sagemaker-mlops:latest -f docker/Dockerfile .
-
-# Test training
-docker run \
-  -e MODEL_NAME=xgbregressor \
-  -e PHASE=train \
-  -v /path/to/data:/opt/ml/input/data/training \
-  -v /tmp/model:/opt/ml/model \
-  sagemaker-mlops:latest
-
-# Check output
-ls -la /tmp/model/
-```
-
-## AWS Setup
-
-### 1. Create IAM Role
-
-Use the policy in `iam_policy.json` to create a new IAM role with trust relationship for SageMaker.
-
-```bash
-aws iam create-role --role-name SageMakerMLOpsRole \
-  --assume-role-policy-document file://trust-policy.json
-
-aws iam put-role-policy --role-name SageMakerMLOpsRole \
-  --policy-name SageMakerMLOpsPolicy \
-  --policy-document file://iam_policy.json
-```
-
-### 2. Create S3 Bucket
-
-```bash
-aws s3 mb s3://your-account-sagemaker-artifacts --region us-east-1
-```
-
-### 3. Create ECR Repository
-
-```bash
-aws ecr create-repository --repository-name sagemaker-mlops --region us-east-1
-```
-
-### 4. Set Environment Variables
-
-Update `.env` or export in shell:
-```bash
+# For SageMaker (optional)
 export AWS_REGION=us-east-1
-export AWS_ACCOUNT_ID=123456789012
-export ECR_REPO_NAME=sagemaker-mlops
-export S3_BUCKET=your-account-sagemaker-artifacts
-export SAGEMAKER_ROLE_ARN=arn:aws:iam::123456789012:role/SageMakerMLOpsRole
+export SAGEMAKER_ROLE_ARN=arn:aws:iam::ACCOUNT:role/SageMakerRole
+
+# For Spark (optional)
+export JAVA_HOME=/path/to/java
 ```
 
-## CI/CD: GitHub Actions
+---
 
-The `.github/workflows/docker-build-push.yml` workflow:
-1. Builds Docker image on every push
-2. Tags with commit SHA and `latest`
-3. Pushes to ECR
+## 📚 Learning Paths
 
-**Required GitHub secrets**:
-- `AWS_REGION`: AWS region (e.g., `us-east-1`)
-- `AWS_ROLE_TO_ASSUME`: ARN of role to assume for OIDC auth
-- `ECR_REPO_NAME`: Name of ECR repository (default: `sagemaker-mlops`)
+### Path 1: Complete Beginner
+1. Start with RAG System (concept-rich, no cloud)
+2. Move to Spark (understand data distribution)
+3. Finally SageMaker (orchestrate it all)
 
-## Troubleshooting
+### Path 2: ML-Focused
+1. Start with SageMaker (production ML)
+2. Understand RAG (advanced retrieval)
+3. Learn Spark (process training data at scale)
 
-### Docker build fails locally
-```bash
-docker build -t test docker/ --progress=plain
-# Check error messages and fix before pushing
+### Path 3: Data Engineering-Focused
+1. Start with Spark (fundamentals)
+2. Move to RAG (real-world retrieval)
+3. Understand SageMaker (ML ops)
+
+---
+
+## 🎓 What You'll Learn
+
+Across all three projects, you'll master:
+
+- ✅ **Cloud ML**: Training, inference, endpoints
+- ✅ **Semantic Search**: Embeddings, similarity, retrieval
+- ✅ **Distributed Computing**: Partitioning, MapReduce, scaling
+- ✅ **Data Processing**: ETL, transformation, aggregation
+- ✅ **Production Systems**: Containerization, monitoring, versioning
+- ✅ **Modern Python**: Type hints, async, testing
+
+---
+
+## 🔗 Connections
+
+These projects are *independent* but *connected*:
+
+```
+SageMaker could use RAG output for training data
+    ↓
+RAG could use embeddings from SageMaker models
+    ↓
+Spark could process data for both systems at scale
 ```
 
-### Training job stuck
-Check logs in SageMaker console:
-- Navigate to **Training → Training jobs → [job_name] → Logs**
-- Also check CloudWatch logs in **CloudWatch → Log groups → /aws/sagemaker/TrainingJobs**
+You can work on any project independently or combine them!
 
-### Model not found
-Ensure model name is registered in `sagemaker_config.py` and `models/__init__.py`
+---
 
-### ECR authentication fails
-```bash
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin 123456789012.dkr.ecr.us-east-1.amazonaws.com
-```
+## 📖 Documentation
 
-### Endpoint deployment fails
-Check IAM permissions and S3 bucket access. Verify:
-- Role has S3 read permissions
-- Bucket policy allows SageMaker role
-- Model artifacts exist at expected S3 path
+- [Project Instructions](./docs/CLAUDE.md) - Original design docs
+- [1_sagemaker-mlops/README.md](./1_sagemaker-mlops/README.md) - ML pipeline guide
+- [2_rag-system/README.md](./2_rag-system/README.md) - RAG system guide
+- [3_spark-learning/README.md](./3_spark-learning/README.md) - Spark tutorial
 
-## Next Steps
+---
 
-1. Add model validation step (test on holdout set before registry)
-2. Add monitoring and drift detection
-3. Add batch inference mode
-4. Set up automated retraining schedule
-5. Add cost optimization (spot instances, auto-scaling)
+## 💡 Next Steps
 
-## Contributing
+1. Pick a project that interests you
+2. Read its README.md
+3. Follow the "Get started" instructions
+4. For Spark: Follow the learning guides in `3_spark-learning/`
 
-1. Create a new branch
-2. Add your changes
-3. Test locally with Docker
-4. Commit and push
-5. GitHub Action will build and push to ECR
-
-## License
-
-MIT
+Happy learning! 🚀
