@@ -9,14 +9,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
+COPY 1_sagemaker-mlops/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy model code
-COPY models/ ./models/
-COPY training/ ./training/
-COPY inference/ ./inference/
-COPY sagemaker_config.py .
+COPY 1_sagemaker-mlops/models/ ./models/
+COPY 1_sagemaker-mlops/training/ ./training/
+COPY 1_sagemaker-mlops/inference/ ./inference/
+COPY 1_sagemaker-mlops/sagemaker_config.py .
 
 # Create directories expected by SageMaker
 RUN mkdir -p /opt/ml/input/data/training
