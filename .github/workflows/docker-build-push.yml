@@ -1,0 +1,111 @@
+name: Build and Push Docker Image to ECR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'training/**'
+      - 'inference/**'
+      - 'models/**'
+      - '.github/workflows/docker-build-push.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  ECR_REPO_NAME: sagemaker-mlops
+  AWS_REGION: us-east-1
+  DOCKERFILE_PATH: ./Dockerfile
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest  # ← GitHub-hosted runner (free!)
+
+    # Permissions needed for OIDC (optional, more secure than IAM keys)
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Step 1: Check out code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # Optional: OIDC role
+          aws-region: ${{ env.AWS_REGION }}
+          # OR use IAM keys (less secure, but simpler):
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Step 3: Log into Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: ${{ secrets.AWS_ACCOUNT_ID }}
+
+      # Step 4: Build Docker Image
+      - name: Build Docker Image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPO_NAME:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # Step 5: Push to ECR
+      - name: Push to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPO_NAME:latest
+          echo "✅ Pushed image: $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
+
+      # Step 6: Print image URI for SageMaker
+      - name: Print Image URI
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "## 🐳 Docker Image Ready"
+          echo "Image URI: $ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG"
+          echo "Latest: $ECR_REGISTRY/$ECR_REPO_NAME:latest"
+          echo ""
+          echo "Use in SageMaker:"
+          echo "  image_uri='$ECR_REGISTRY/$ECR_REPO_NAME:$IMAGE_TAG'"
+
+      # Step 7: Notify on failure
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Docker build/push failed!"
+          echo "Check logs above for details"
+        shell: bash
+
+  # Optional: Run tests before building image
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Tests
+        run: |
+          # pytest tests/ -v  # Uncomment if you have tests
+          echo "✅ Tests passed (or no tests defined)"
