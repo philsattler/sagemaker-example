@@ -193,14 +193,3 @@ You can work on any project independently or combine them!
 - [3_spark-learning/README.md](./3_spark-learning/README.md) - Spark tutorial
 
 ---
-
-## 💡 Next Steps
-
-1. Pick a project that interests you
-2. Read its README.md
-3. Follow the "Get started" instructions
-4. For Spark: Follow the learning guides in `3_spark-learning/`
-
-Happy learning! 🚀
-# Retry
-# test

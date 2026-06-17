@@ -51,6 +51,7 @@ htmlcov/
 # AWS
 .aws/
 aws_credentials
+.aws-credentials-*
 
 # Docker
 docker-compose.override.yml
@@ -72,3 +73,4 @@ data/
 # Logs
 logs/
 *.log
+.interview-prep.md
