@@ -26,10 +26,10 @@ class ModelConfig:
 # Model configurations
 MODEL_CONFIG = {
     "xgbregressor": ModelConfig(
-        # Training: Use Spot instances to save cost (70% cheaper)
-        training_instance_type="ml.m5.large",  # CPU-only for demo, Spot saves cost
+        # Training: Use on-demand for demo (Spot requires AWS quota increase)
+        training_instance_type="ml.m5.large",  # CPU-only for demo
         training_instance_count=1,
-        use_spot=True,
+        use_spot=False,  # Set to True after requesting quota increase
 
         # Inference: Use Lambda for serverless (no endpoint cost)
         inference_instance_type="ml.t3.medium",  # Fallback for real-time endpoints
