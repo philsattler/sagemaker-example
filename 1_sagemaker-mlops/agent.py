@@ -74,18 +74,28 @@ class TrainingAgent:
         logger.info(f"Image: {image_uri}")
 
         # Create estimator (use training instance type, not inference)
-        estimator = Estimator(
-            image_uri=image_uri,
-            role=self.role_arn,
-            instance_count=config.training_instance_count,
-            instance_type=config.training_instance_type,
-            output_path=S3_TRAINING_OUTPUT,
-            sagemaker_session=self.sagemaker_session,
-            hyperparameters=job_hyperparameters,
-        )
+        estimator_kwargs = {
+            "image_uri": image_uri,
+            "role": self.role_arn,
+            "instance_count": config.training_instance_count,
+            "instance_type": config.training_instance_type,
+            "output_path": S3_TRAINING_OUTPUT,
+            "sagemaker_session": self.sagemaker_session,
+            "hyperparameters": job_hyperparameters,
+        }
 
-        # Start training
+        # Add Spot instance support (saves ~70% cost)
+        if config.use_spot:
+            estimator_kwargs["use_spot_instances"] = True
+            estimator_kwargs["max_run"] = 3600  # 1 hour max training time
+            logger.info("✓ Using Spot instances (70% cost savings)")
+
+        estimator = Estimator(**estimator_kwargs)
+
+        # Start training with data from S3
+        training_data = f"s3://{os.getenv('S3_BUCKET', '')}/data/"
         estimator.fit(
+            inputs=training_data,
             wait=wait,
             job_name=job_name,
         )

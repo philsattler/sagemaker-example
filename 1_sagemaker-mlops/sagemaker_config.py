@@ -8,6 +8,7 @@ class ModelConfig:
     # Training instances (ephemeral, used once per training)
     training_instance_type: str
     training_instance_count: int = 1
+    use_spot: bool = False  # Use Spot instances for training (saves ~70% cost)
 
     # Inference instances (persistent, can run 24/7)
     inference_instance_type: str = None  # If None, defaults to training_instance_type
@@ -25,17 +26,18 @@ class ModelConfig:
 # Model configurations
 MODEL_CONFIG = {
     "xgbregressor": ModelConfig(
-        # Training: Use GPU for faster training (runs for a few hours)
-        training_instance_type="ml.p3.2xlarge",  # GPU, $3.06/hour
+        # Training: Use Spot instances to save cost (70% cheaper)
+        training_instance_type="ml.m5.large",  # CPU-only for demo, Spot saves cost
         training_instance_count=1,
+        use_spot=True,
 
-        # Inference: Use cheaper CPU (runs 24/7 or on-demand)
-        inference_instance_type="ml.t3.medium",  # CPU only, $0.042/hour
+        # Inference: Use Lambda for serverless (no endpoint cost)
+        inference_instance_type="ml.t3.medium",  # Fallback for real-time endpoints
         inference_instance_count=1,
 
         hyperparameters={
-            "n_estimators": 100,
-            "max_depth": 6,
+            "n_estimators": 50,
+            "max_depth": 5,
             "learning_rate": 0.1,
         }
     ),
