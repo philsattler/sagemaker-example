@@ -26,10 +26,11 @@ class ModelConfig:
 # Model configurations
 MODEL_CONFIG = {
     "xgbregressor": ModelConfig(
-        # Training: Use on-demand for demo (Spot requires AWS quota increase)
-        training_instance_type="ml.m5.large",  # CPU-only for demo
+        # Training: Use smallest available instance (ml.t2.medium)
+        # AWS new accounts have 0 quota on most instances
+        training_instance_type="ml.t2.medium",  # Tiny instance, usually has quota
         training_instance_count=1,
-        use_spot=False,  # Set to True after requesting quota increase
+        use_spot=False,
 
         # Inference: Use Lambda for serverless (no endpoint cost)
         inference_instance_type="ml.t3.medium",  # Fallback for real-time endpoints
