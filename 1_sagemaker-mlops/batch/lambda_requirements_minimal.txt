@@ -1,4 +1,5 @@
-# Minimal dependencies for Lambda inference only
-# (excludes large compiled packages like numpy, pandas)
+# Minimal dependencies for Lambda inference
 boto3>=1.26.0
 xgboost>=2.0.0
+numpy>=1.26.0
+pandas>=2.0.0
