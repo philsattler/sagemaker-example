@@ -8,13 +8,12 @@ WORKDIR /build
 # Install build tools needed for compiling scipy/numpy
 RUN yum install -y gcc gcc-c++ make libopenblas-devel && yum clean all
 
-# Copy requirements
-COPY lambda_requirements.txt .
+# Copy minimal requirements (boto3, xgboost only - avoids numpy/scipy compilation issues)
+COPY lambda_requirements_minimal.txt .
 
 # Install dependencies to /opt/python (Lambda layer format)
-# Use --only-binary to prefer pre-built wheels, only compile if necessary
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r lambda_requirements.txt -t /opt/python/ --no-cache-dir
+RUN pip install --upgrade pip && \
+    pip install -r lambda_requirements_minimal.txt -t /opt/python/ --no-cache-dir
 
 # Copy handler
 COPY lambda_handler.py /opt/
