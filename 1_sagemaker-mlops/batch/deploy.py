@@ -90,7 +90,12 @@ def deploy_lambda():
         return True
     else:
         print("❌ Deployment failed!")
-        print(result.stderr)
+        if result.stderr:
+            print("\nError output:")
+            print(result.stderr)
+        if result.stdout:
+            print("\nServer output:")
+            print(result.stdout)
         return False
 
 
