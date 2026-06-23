@@ -19,6 +19,25 @@ Two approaches for batch predictions: serverless (Lambda) and managed endpoints 
 
 ---
 
+## ⚡ Quick Start (Automated)
+
+**From the batch directory:**
+
+```bash
+# 1. Train model locally
+python3 ../train_locally.py
+
+# 2. Deploy to Lambda (auto-configures everything)
+python3 deploy.py
+
+# 3. Test inference
+python3 test_inference.py
+```
+
+That's it! The scripts handle model discovery, configuration, and deployment automatically.
+
+---
+
 ## 🚀 Option 1: Serverless Lambda (Recommended for Most Cases)
 
 ### Advantages

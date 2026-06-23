@@ -43,6 +43,8 @@ s3_client = boto3.client('s3')
 # Model is loaded once at Lambda container startup (reused across invocations)
 MODEL = None
 MODEL_TYPE = None  # 'xgboost' or 'lightgbm'
+MODEL_BUCKET = "sagemaker-mlops-495811053995"
+MODEL_KEY = "sagemaker-artifacts/models/xgbregressor/local-20260623120000.tar.gz"  # Paste YOUR key here
 
 
 def load_model(bucket: str, model_key: str) -> tuple:
