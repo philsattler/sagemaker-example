@@ -12,13 +12,18 @@ Shows the complete workflow:
 import os
 import sys
 import json
+import time
 import pandas as pd
 
 # Add parent to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 import boto3
-from batch_on_ec2 import BatchInferenceEC2
+from sagemaker.model import Model
+from sagemaker.predictor import Predictor
+from sagemaker.serializers import CSVSerializer
+from sagemaker.deserializers import JSONDeserializer
+import sagemaker
 
 
 def main():
@@ -83,24 +88,40 @@ def main():
         print("="*80)
         print("This takes 5-10 minutes...")
 
-        batch = BatchInferenceEC2(
-            model_name='xgbregressor',
-            model_s3_uri=model_uri,
-            instance_type='ml.m5.large',
-            instance_count=1,
-            region=region
+        # Get SageMaker role and session
+        role_arn = os.getenv('SAGEMAKER_ROLE_ARN')
+        sm_session = sagemaker.Session(default_bucket=bucket)
+
+        # Create model from S3 artifacts
+        endpoint_name = f"xgb-batch-inference-{int(time.time())}"
+        model = Model(
+            image_uri=f"{account_id}.dkr.ecr.{region}.amazonaws.com/sagemaker-mlops:latest",
+            model_data=model_uri,
+            role=role_arn,
+            sagemaker_session=sm_session,
+            name=endpoint_name
         )
 
-        batch.create_endpoint()
-        print("✓ Endpoint created")
+        # Deploy endpoint
+        predictor = model.deploy(
+            initial_instance_count=1,
+            instance_type='ml.m5.large',
+            endpoint_name=endpoint_name,
+            wait=True
+        )
+        print(f"✓ Endpoint created: {endpoint_name}")
 
         # Run inference
         print("\n" + "="*80)
         print("RUNNING BATCH INFERENCE")
         print("="*80)
 
-        predictions = batch.batch_predict(test_data)
-        print(f"✓ Generated {len(predictions)} predictions")
+        # Convert to CSV for XGBoost
+        csv_data = test_data.to_csv(header=False, index=False)
+
+        # Predict
+        predictions = predictor.predict(csv_data)
+        print(f"✓ Generated {len(test_data)} predictions")
         print("\nPredictions:")
         print(predictions)
 
@@ -109,7 +130,7 @@ def main():
         print("DELETING ENDPOINT")
         print("="*80)
 
-        batch.delete_endpoint()
+        predictor.delete_endpoint()
         print("✓ Endpoint deleted")
 
         # Summary
