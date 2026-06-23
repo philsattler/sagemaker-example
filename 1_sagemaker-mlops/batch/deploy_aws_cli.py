@@ -13,18 +13,51 @@ import json
 
 
 def create_lambda_zip(zip_path):
-    """Create deployment zip with lambda_handler.py."""
+    """Create deployment zip with lambda_handler.py and dependencies."""
     print("\nCreating deployment package...")
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     handler_file = os.path.join(script_dir, 'lambda_handler.py')
+    requirements_file = os.path.join(script_dir, 'lambda_requirements.txt')
 
     if not os.path.exists(handler_file):
         print(f"❌ lambda_handler.py not found at {handler_file}")
         return False
 
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-        zf.write(handler_file, arcname='lambda_handler.py')
+    if not os.path.exists(requirements_file):
+        print(f"⚠️  lambda_requirements.txt not found, creating zip with handler only")
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.write(handler_file, arcname='lambda_handler.py')
+    else:
+        # Install dependencies to temp directory
+        import subprocess
+        deps_dir = tempfile.mkdtemp(prefix='lambda_deps_')
+
+        print("  Installing dependencies...")
+        result = subprocess.run(
+            ['pip', 'install', '-r', requirements_file, '-t', deps_dir],
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            print(f"⚠️  Some dependencies failed to install (non-critical)")
+
+        # Create zip with dependencies + handler
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # Add all dependencies
+            for root, dirs, files in os.walk(deps_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, deps_dir)
+                    zf.write(file_path, arcname=arcname)
+
+            # Add handler
+            zf.write(handler_file, arcname='lambda_handler.py')
+
+        # Cleanup
+        import shutil
+        shutil.rmtree(deps_dir)
 
     size_kb = os.path.getsize(zip_path) / 1024
     print(f"✓ Created zip: {zip_path} ({size_kb:.1f} KB)")
