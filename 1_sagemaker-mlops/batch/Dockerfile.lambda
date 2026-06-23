@@ -6,7 +6,7 @@ FROM public.ecr.aws/lambda/python:3.11
 WORKDIR /build
 
 # Install all build tools needed for xgboost, scipy, numpy
-RUN yum install -y gcc gcc-c++ gcc-gfortran make cmake git && yum clean all
+RUN yum install -y gcc gcc-c++ gcc-gfortran make cmake git zip && yum clean all
 
 # Copy minimal requirements (boto3, xgboost only - avoids numpy/scipy compilation issues)
 COPY lambda_requirements_minimal.txt .
