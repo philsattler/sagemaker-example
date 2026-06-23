@@ -18,7 +18,11 @@ def create_lambda_zip(zip_path):
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     handler_file = os.path.join(script_dir, 'lambda_handler.py')
-    requirements_file = os.path.join(script_dir, 'lambda_requirements.txt')
+
+    # Use minimal requirements (numpy/pandas need to be Linux-compiled for Lambda)
+    # If lambda_requirements_minimal.txt exists, use it. Otherwise use full requirements.
+    minimal_req = os.path.join(script_dir, 'lambda_requirements_minimal.txt')
+    requirements_file = minimal_req if os.path.exists(minimal_req) else os.path.join(script_dir, 'lambda_requirements.txt')
 
     if not os.path.exists(handler_file):
         print(f"❌ lambda_handler.py not found at {handler_file}")
@@ -33,11 +37,16 @@ def create_lambda_zip(zip_path):
         import subprocess
         deps_dir = tempfile.mkdtemp(prefix='lambda_deps_')
 
-        print("  Installing dependencies...")
+        print("  Installing dependencies for Linux (Lambda runtime)...")
         # Try uv first (modern), fall back to pip
+        # Use --platform to get Linux-compatible wheels even on macOS
         try:
             result = subprocess.run(
-                ['uv', 'pip', 'install', '-r', requirements_file, '-t', deps_dir],
+                ['uv', 'pip', 'install',
+                 '-r', requirements_file,
+                 '-t', deps_dir,
+                 '--platform', 'manylinux2014_x86_64',
+                 '--python-version', '311'],
                 capture_output=True,
                 text=True,
                 timeout=120
@@ -45,7 +54,12 @@ def create_lambda_zip(zip_path):
         except FileNotFoundError:
             # Fall back to pip if uv not found
             result = subprocess.run(
-                ['pip', 'install', '-r', requirements_file, '-t', deps_dir],
+                ['pip', 'install',
+                 '-r', requirements_file,
+                 '-t', deps_dir,
+                 '--platform', 'manylinux2014_x86_64',
+                 '--only-binary=:all:',
+                 '--python-version', '311'],
                 capture_output=True,
                 text=True,
                 timeout=120
