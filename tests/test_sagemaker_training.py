@@ -1,5 +1,7 @@
 import os
-from agent import TrainingController
+import sys
+sys.path.insert(0, '../1_sagemaker-mlops')
+from training_controller import TrainingController
 
 # Verify environment is set
 assert os.getenv("SAGEMAKER_ROLE_ARN"), "SAGEMAKER_ROLE_ARN not set"
