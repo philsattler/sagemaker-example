@@ -12,8 +12,10 @@ RUN yum install -y gcc gcc-c++ gcc-gfortran make cmake git && yum clean all
 COPY lambda_requirements_minimal.txt .
 
 # Install dependencies to /opt/python (Lambda layer format)
+# Use --only-binary=:all: to use pre-built wheels (avoid compilation)
 RUN pip install --upgrade pip && \
-    pip install -r lambda_requirements_minimal.txt -t /opt/python/ --no-cache-dir
+    pip install -r lambda_requirements_minimal.txt -t /opt/python/ \
+    --only-binary=:all: --no-cache-dir
 
 # Copy handler
 COPY lambda_handler.py /opt/
