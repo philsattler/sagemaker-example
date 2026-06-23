@@ -34,11 +34,22 @@ def create_lambda_zip(zip_path):
         deps_dir = tempfile.mkdtemp(prefix='lambda_deps_')
 
         print("  Installing dependencies...")
-        result = subprocess.run(
-            ['pip', 'install', '-r', requirements_file, '-t', deps_dir],
-            capture_output=True,
-            text=True
-        )
+        # Try uv first (modern), fall back to pip
+        try:
+            result = subprocess.run(
+                ['uv', 'pip', 'install', '-r', requirements_file, '-t', deps_dir],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+        except FileNotFoundError:
+            # Fall back to pip if uv not found
+            result = subprocess.run(
+                ['pip', 'install', '-r', requirements_file, '-t', deps_dir],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
 
         if result.returncode != 0:
             print(f"⚠️  Some dependencies failed to install (non-critical)")
