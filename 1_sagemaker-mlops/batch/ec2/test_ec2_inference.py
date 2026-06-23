@@ -93,14 +93,13 @@ def main():
         sm_session = sagemaker.Session(default_bucket=bucket)
 
         # Create model from S3 artifacts
-        # Use SageMaker's official XGBoost image (pre-configured for inference)
         endpoint_name = f"xgb-batch-inference-{int(time.time())}"
 
-        # XGBoost algorithm image (official SageMaker)
-        xgboost_image = f"246618743249.dkr.ecr.{region}.amazonaws.com/sagemaker-xgboost:1.7-1"
+        # Use your own Docker image in ECR (has proper permissions)
+        custom_image = f"{account_id}.dkr.ecr.{region}.amazonaws.com/sagemaker-mlops:latest"
 
         model = Model(
-            image_uri=xgboost_image,
+            image_uri=custom_image,
             model_data=model_uri,
             role=role_arn,
             sagemaker_session=sm_session,
