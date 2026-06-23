@@ -32,7 +32,8 @@ docker build -f "$SCRIPT_DIR/Dockerfile.lambda" -t lambda-builder "$SCRIPT_DIR"
 
 echo ""
 echo "Creating Lambda package..."
-docker run --rm -v "$OUTPUT_DIR:/output" lambda-builder
+# Override entrypoint to bypass Lambda's handler requirement
+docker run --rm -v "$OUTPUT_DIR:/output" --entrypoint /bin/sh lambda-builder -c "cp /build/lambda_package.zip /output/"
 
 echo ""
 
