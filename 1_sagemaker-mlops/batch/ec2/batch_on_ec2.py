@@ -48,9 +48,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Setup SageMaker session
+import os
 session = sagemaker.Session()
-role = sagemaker.get_execution_role()
 region = session.boto_region_name
+
+# Get role - from env var (local) or auto-detect (SageMaker)
+try:
+    role = os.getenv('SAGEMAKER_ROLE_ARN')
+    if not role:
+        role = sagemaker.get_execution_role()
+except Exception:
+    role = os.getenv('SAGEMAKER_ROLE_ARN')
+    if not role:
+        raise ValueError("SAGEMAKER_ROLE_ARN not found. Set it or run from SageMaker notebook.")
 
 
 class BatchInferenceEC2:
