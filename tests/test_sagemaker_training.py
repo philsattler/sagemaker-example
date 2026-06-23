@@ -1,5 +1,5 @@
 import os
-from agent import TrainingAgent
+from agent import TrainingController
 
 # Verify environment is set
 assert os.getenv("SAGEMAKER_ROLE_ARN"), "SAGEMAKER_ROLE_ARN not set"
@@ -13,12 +13,12 @@ print(f"Bucket: {os.getenv('S3_BUCKET')}")
 print(f"Role: {os.getenv('SAGEMAKER_ROLE_ARN')}")
 print("=" * 60)
 
-# Create training agent
-agent = TrainingAgent()
+# Create training controller
+controller = TrainingController()
 
 # Start training
 try:
-    job_name = agent.train(
+    job_name = controller.train(
         model_name="xgbregressor",
         image_tag="latest",
         wait=False  # Don't wait; just submit the job

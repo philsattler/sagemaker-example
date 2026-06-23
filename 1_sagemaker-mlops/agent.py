@@ -1,5 +1,5 @@
 """
-Training Agent: Orchestrates SageMaker training jobs.
+Training Controller: Orchestrates SageMaker training jobs.
 """
 
 import os
@@ -25,7 +25,7 @@ from sagemaker_config import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class TrainingAgent:
+class TrainingController:
     """Orchestrates model training on SageMaker."""
 
     def __init__(self, role_arn: Optional[str] = None, region: str = AWS_REGION):
@@ -158,6 +158,6 @@ class TrainingAgent:
 
 if __name__ == "__main__":
     # Example usage
-    agent = TrainingAgent()
-    job_name = agent.train(model_name="xgbregressor")
+    controller = TrainingController()
+    job_name = controller.train(model_name="xgbregressor")
     print(f"Training job: {job_name}")
