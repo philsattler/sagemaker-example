@@ -74,3 +74,6 @@ data/
 logs/
 *.log
 .interview-prep.md
+# Generated Lambda packages
+**/lambda_package.zip
+**/*.tar.gz
