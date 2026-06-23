@@ -1,0 +1,22 @@
+# Build Lambda deployment package on Linux
+# Uses Amazon Linux 2 (matches Lambda runtime)
+
+FROM public.ecr.aws/lambda/python:3.11
+
+WORKDIR /build
+
+# Copy requirements
+COPY lambda_requirements.txt .
+
+# Install dependencies to /opt/python (Lambda layer format)
+RUN pip install -r lambda_requirements.txt -t /opt/python/
+
+# Copy handler
+COPY lambda_handler.py /opt/
+
+# Create the zip
+RUN cd /opt && \
+    zip -r lambda_package.zip . && \
+    mv lambda_package.zip /build/
+
+CMD ["cp", "/build/lambda_package.zip", "/output/lambda_package.zip"]

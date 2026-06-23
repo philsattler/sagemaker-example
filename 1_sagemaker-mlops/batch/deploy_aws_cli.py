@@ -17,6 +17,16 @@ def create_lambda_zip(zip_path):
     print("\nCreating deployment package...")
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Check if pre-built Docker zip exists
+    prebuilt_zip = os.path.join(script_dir, 'lambda_package.zip')
+    if os.path.exists(prebuilt_zip):
+        print(f"✓ Using pre-built Docker package: {prebuilt_zip}")
+        import shutil
+        shutil.copy(prebuilt_zip, zip_path)
+        size_kb = os.path.getsize(zip_path) / 1024
+        print(f"✓ Copied to deployment: {zip_path} ({size_kb:.1f} KB)")
+        return True
     handler_file = os.path.join(script_dir, 'lambda_handler.py')
 
     # Use minimal requirements (numpy/pandas need to be Linux-compiled for Lambda)
