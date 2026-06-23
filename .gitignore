@@ -77,3 +77,4 @@ logs/
 # Generated Lambda packages
 **/lambda_package.zip
 **/*.tar.gz
+what_i_know.txt
