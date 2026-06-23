@@ -1,4 +1,4 @@
-service: batch-inference-serverless
+service: sagemaker-mlops-inference
 
 frameworkVersion: '3'
 
@@ -6,91 +6,34 @@ provider:
   name: aws
   runtime: python3.11
   region: us-east-1
-  memorySize: 3008  # 3GB (max before hitting CPU limit)
-  timeout: 900  # 15 minutes (max for Lambda)
   environment:
-    LOG_LEVEL: INFO
-  iam:
-    role:
-      statements:
-        # S3 access for input/output data
-        - Effect: Allow
-          Action:
-            - s3:GetObject
-            - s3:PutObject
-          Resource:
-            - arn:aws:s3:::*/*
-        # CloudWatch logs
-        - Effect: Allow
-          Action:
-            - logs:CreateLogGroup
-            - logs:CreateLogStream
-            - logs:PutLogEvents
-          Resource: arn:aws:logs:*:*:*
+    S3_BUCKET: sagemaker-mlops-495811053995
+    MODEL_BUCKET: sagemaker-mlops-495811053995
+    MODEL_KEY: sagemaker-artifacts/models/xgbregressor/local-20260623100439.tar.gz
 
 functions:
-  batch-inference:
+  inference:
     handler: lambda_handler.lambda_handler
-    description: Batch inference for ML models from S3 CSV
     memorySize: 3008
     timeout: 900
-    layers:
-      - !Ref PythonDependenciesLayer
-    events:
-      # API Gateway trigger (optional - for synchronous invocation)
-      - http:
-          path: predict
-          method: post
-          cors: true
-      # S3 trigger (optional - auto-trigger on S3 upload)
-      # - s3:
-      #     bucket: my-bucket
-      #     event: s3:ObjectCreated:*
-      #     rules:
-      #       - prefix: uploads/
-      #       - suffix: .csv
-
-layers:
-  PythonDependencies:
-    path: layers
-    name: batch-inference-dependencies
-    description: Python dependencies for batch inference
-    compatibleRuntimes:
-      - python3.11
-    retain: false
+    environment:
+      MODEL_BUCKET: sagemaker-mlops-495811053995
+      MODEL_KEY: sagemaker-artifacts/models/xgbregressor/local-20260623100439.tar.gz
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+          - s3:PutObject
+        Resource: 'arn:aws:s3:::*/*'
+      - Effect: Allow
+        Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        Resource: 'arn:aws:logs:*:*:*'
 
 package:
   patterns:
     - '!node_modules/**'
     - '!venv/**'
     - '!.git/**'
-
-plugins:
-  - serverless-python-requirements
-
-custom:
-  pythonRequirements:
-    dockerizePip: true
-    slim: true  # Remove unnecessary files
-    strip: true  # Strip binaries
-    useDownloadCache: true
-    useStaticCache: true
-
-# Deployment instructions:
-#
-# Prerequisites:
-#   1. Install Serverless Framework: npm install -g serverless
-#   2. Configure AWS credentials: aws configure
-#   3. Install plugins: npm install --save-dev serverless-python-requirements
-#
-# Deploy:
-#   serverless deploy
-#
-# Invoke:
-#   serverless invoke -f batch-inference -d '{"bucket":"my-bucket","input_key":"data.csv"}'
-#
-# Logs:
-#   serverless logs -f batch-inference --tail
-#
-# Delete:
-#   serverless remove
