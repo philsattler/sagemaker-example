@@ -150,10 +150,23 @@ def deploy_lambda(function_name, zip_path, role_arn, region, model_key, bucket):
 
     import boto3
     lambda_client = boto3.client('lambda', region_name=region)
+    s3_client = boto3.client('s3', region_name=region)
 
-    # Read zip file
-    with open(zip_path, 'rb') as f:
-        zip_content = f.read()
+    # Get zip file size
+    zip_size_mb = os.path.getsize(zip_path) / (1024 * 1024)
+
+    # If zip > 50MB, upload to S3 first
+    if zip_size_mb > 50:
+        print(f"\nZip file too large ({zip_size_mb:.1f}MB), uploading to S3...")
+        s3_key = f"lambda-deployments/{function_name}-{os.path.basename(zip_path)}"
+        s3_client.upload_file(zip_path, bucket, s3_key)
+        print(f"✓ Uploaded to s3://{bucket}/{s3_key}")
+        code_params = {'S3Bucket': bucket, 'S3Key': s3_key}
+    else:
+        # Small enough for direct upload
+        with open(zip_path, 'rb') as f:
+            zip_content = f.read()
+        code_params = {'ZipFile': zip_content}
 
     # Check if function exists
     try:
@@ -163,7 +176,7 @@ def deploy_lambda(function_name, zip_path, role_arn, region, model_key, bucket):
         # Update function code
         lambda_client.update_function_code(
             FunctionName=function_name,
-            ZipFile=zip_content
+            **code_params
         )
         print(f"✓ Updated function code")
 
@@ -189,7 +202,7 @@ def deploy_lambda(function_name, zip_path, role_arn, region, model_key, bucket):
             Runtime='python3.11',
             Role=role_arn,
             Handler='lambda_handler.lambda_handler',
-            Code={'ZipFile': zip_content},
+            Code=code_params,
             Timeout=900,
             MemorySize=3008,
             Environment={
