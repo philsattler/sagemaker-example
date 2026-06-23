@@ -180,6 +180,20 @@ def deploy_lambda(function_name, zip_path, role_arn, region, model_key, bucket):
         )
         print(f"✓ Updated function code")
 
+        # Wait for update to complete before updating config
+        print(f"  Waiting for update to complete...")
+        import time
+        for _ in range(30):  # Try up to 30 times
+            try:
+                time.sleep(1)
+                lambda_client.get_function(FunctionName=function_name)
+                # Check if LastUpdateStatus is Successful
+                response = lambda_client.get_function_configuration(FunctionName=function_name)
+                if response.get('LastUpdateStatus') == 'Successful':
+                    break
+            except:
+                pass
+
         # Update environment variables
         lambda_client.update_function_configuration(
             FunctionName=function_name,
