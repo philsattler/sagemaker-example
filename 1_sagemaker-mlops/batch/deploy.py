@@ -35,7 +35,9 @@ def get_latest_model_from_s3():
 
 def update_serverless_yml(model_key):
     """Update serverless.yml with model path."""
-    yml_path = 'serverless.yml'
+    # Get path relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    yml_path = os.path.join(script_dir, 'serverless.yml')
 
     # Read current YAML
     with open(yml_path, 'r') as f:
@@ -77,9 +79,10 @@ def deploy_lambda():
 
     print(f"✓ Serverless version: {result.stdout.strip()}")
 
-    # Deploy
+    # Deploy from batch directory
     print("\nDeploying Lambda function...")
-    result = subprocess.run(['serverless', 'deploy', '--verbose'], capture_output=True, text=True)
+    batch_dir = os.path.dirname(os.path.abspath(__file__))
+    result = subprocess.run(['serverless', 'deploy', '--verbose'], capture_output=True, text=True, cwd=batch_dir)
 
     if result.returncode == 0:
         print("✓ Deployment successful!")
