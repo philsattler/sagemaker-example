@@ -73,6 +73,7 @@ data/
 # Logs
 logs/
 *.log
+.interview-prep-ds.md
 .interview-prep.md
 # Generated Lambda packages
 **/lambda_package.zip

@@ -1,15 +1,24 @@
 from models.base import BaseModel
-from models.xgbregressor import XGBRegressor
-from models.lightgbmclassifier import LightGBMClassifier
 
-__all__ = ["BaseModel", "XGBRegressor", "LightGBMClassifier"]
+__all__ = ["BaseModel", "XGBRegressor", "LightGBMClassifier", "load_model"]
 
 def load_model(model_name: str) -> BaseModel:
-    """Dynamically load a model class by name."""
-    models = {
-        "xgbregressor": XGBRegressor,
-        "lightgbmclassifier": LightGBMClassifier,
-    }
-    if model_name not in models:
-        raise ValueError(f"Unknown model: {model_name}. Available: {list(models.keys())}")
-    return models[model_name]()
+    """Dynamically load a model class by name (lazy import)."""
+    if model_name == "xgbregressor":
+        from models.xgbregressor import XGBRegressor
+        return XGBRegressor()
+    elif model_name == "lightgbmclassifier":
+        from models.lightgbmclassifier import LightGBMClassifier
+        return LightGBMClassifier()
+    else:
+        raise ValueError(f"Unknown model: {model_name}. Available: xgbregressor, lightgbmclassifier")
+
+def __getattr__(name: str):
+    """Support direct imports like: from models import XGBRegressor"""
+    if name == "XGBRegressor":
+        from models.xgbregressor import XGBRegressor
+        return XGBRegressor
+    elif name == "LightGBMClassifier":
+        from models.lightgbmclassifier import LightGBMClassifier
+        return LightGBMClassifier
+    raise AttributeError(f"module 'models' has no attribute '{name}'")

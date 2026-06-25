@@ -38,6 +38,37 @@ class InferenceController:
 
         self.endpoints = {}  # Track active endpoints
 
+    def register_model_from_s3(self, model_name: str, s3_model_uri: str, image_uri: Optional[str] = None) -> str:
+        """
+        Register a model from S3 artifacts into the Model Registry.
+
+        Args:
+            model_name: Name of the model (e.g., 'xgbregressor')
+            s3_model_uri: S3 URI to model tarball (e.g., s3://bucket/path/model.tar.gz)
+            image_uri: Docker image URI. If not provided, uses your custom training image.
+
+        Returns:
+            Registered model name
+        """
+        logger.info(f"Registering model from S3: {s3_model_uri}")
+
+        registered_model_name = f"{model_name}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+        if not image_uri:
+            image_uri = get_training_image_uri()
+
+        model_obj = Model(
+            image_uri=image_uri,
+            model_data=s3_model_uri,
+            role=self.role_arn,
+            sagemaker_session=self.sagemaker_session,
+            name=registered_model_name,
+        )
+
+        model_obj.create()
+        logger.info(f"Model registered: {registered_model_name}")
+        return registered_model_name
+
     def deploy(
         self,
         model_name: str,
