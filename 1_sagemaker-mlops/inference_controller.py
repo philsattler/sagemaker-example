@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, List
 
 import boto3
 import numpy as np
+from botocore.exceptions import ClientError
 from sagemaker.session import Session
 from sagemaker.model import Model
 
@@ -57,6 +58,9 @@ class InferenceController:
 
         Returns:
             InferenceEndpoint: Endpoint object for making predictions
+
+        Raises:
+            Cleans up endpoint and config automatically on any failure.
         """
         config = get_model_config(model_name)
         # Use inference-specific instance type and count (not training)
@@ -71,39 +75,46 @@ class InferenceController:
         logger.info(f"Deploying endpoint: {endpoint_name}")
         logger.info(f"Model: {model_name_obj}, Instance: {instance_type}")
 
-        # Create endpoint configuration
-        self.sm_client.create_endpoint_config(
-            EndpointConfigName=endpoint_name,
-            ProductionVariants=[
-                {
-                    "VariantName": "default",
-                    "ModelName": model_name_obj,
-                    "InstanceType": instance_type,
-                    "InitialInstanceCount": instance_count,
-                }
-            ],
-        )
+        try:
+            # Create endpoint configuration
+            self.sm_client.create_endpoint_config(
+                EndpointConfigName=endpoint_name,
+                ProductionVariants=[
+                    {
+                        "VariantName": "default",
+                        "ModelName": model_name_obj,
+                        "InstanceType": instance_type,
+                        "InitialInstanceCount": instance_count,
+                    }
+                ],
+            )
 
-        # Create endpoint
-        self.sm_client.create_endpoint(
-            EndpointName=endpoint_name,
-            EndpointConfigName=endpoint_name,
-        )
+            # Create endpoint
+            self.sm_client.create_endpoint(
+                EndpointName=endpoint_name,
+                EndpointConfigName=endpoint_name,
+            )
 
-        logger.info(f"Endpoint creation started: {endpoint_name}")
+            logger.info(f"Endpoint creation started: {endpoint_name}")
 
-        if wait:
-            self._wait_for_endpoint(endpoint_name)
-            logger.info(f"Endpoint is active: {endpoint_name}")
+            if wait:
+                self._wait_for_endpoint(endpoint_name)
+                logger.info(f"Endpoint is active: {endpoint_name}")
 
-        endpoint = InferenceEndpoint(
-            endpoint_name=endpoint_name,
-            model_name=model_name,
-            sm_client=self.sm_client,
-        )
+            endpoint = InferenceEndpoint(
+                endpoint_name=endpoint_name,
+                model_name=model_name,
+                sm_client=self.sm_client,
+            )
 
-        self.endpoints[endpoint_name] = endpoint
-        return endpoint
+            self.endpoints[endpoint_name] = endpoint
+            return endpoint
+
+        except Exception as e:
+            logger.error(f"Deployment failed for {endpoint_name}: {str(e)}")
+            logger.info(f"Cleaning up endpoint and config for {endpoint_name}")
+            self._cleanup_endpoint_resources(endpoint_name)
+            raise
 
     def _get_latest_model(self, model_name: str, version: Optional[str] = None) -> str:
         """Get the latest model from SageMaker Model Registry."""
@@ -155,6 +166,35 @@ class InferenceController:
 
         logger.info(f"Endpoint deleted: {endpoint_name}")
 
+        if endpoint_name in self.endpoints:
+            del self.endpoints[endpoint_name]
+
+    def _cleanup_endpoint_resources(self, endpoint_name: str) -> None:
+        """
+        Safely delete endpoint and config, ignoring errors if they don't exist.
+        Used for cleanup after failed deployments.
+        """
+        # Try to delete endpoint (may not exist if creation failed)
+        try:
+            self.sm_client.delete_endpoint(EndpointName=endpoint_name)
+            logger.info(f"Deleted endpoint: {endpoint_name}")
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ValidationException':
+                logger.debug(f"Endpoint did not exist: {endpoint_name}")
+            else:
+                logger.warning(f"Error deleting endpoint: {str(e)}")
+
+        # Try to delete endpoint config (may not exist if config creation failed)
+        try:
+            self.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_name)
+            logger.info(f"Deleted endpoint config: {endpoint_name}")
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ValidationException':
+                logger.debug(f"Endpoint config did not exist: {endpoint_name}")
+            else:
+                logger.warning(f"Error deleting endpoint config: {str(e)}")
+
+        # Remove from tracking
         if endpoint_name in self.endpoints:
             del self.endpoints[endpoint_name]
 
